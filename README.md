@@ -1,4 +1,4 @@
-# IPSymconAdGuradHome
+# IPSymconAdGuardHome
 
 [![IPS-Version](https://img.shields.io/badge/Symcon_Version-6.2+-red.svg)](https://www.symcon.de/service/dokumentation/entwicklerbereich/sdk-tools/sdk-php/)
 ![Code](https://img.shields.io/badge/Code-PHP-blue.svg)
