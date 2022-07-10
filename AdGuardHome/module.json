@@ -1,0 +1,12 @@
+{
+	"id": "{FE7566FC-ECA0-78E8-5114-C4C217231642}",
+	"name": "AdGuard Home",
+	"type": 3,
+	"vendor": "",
+	"aliases": [],
+	"parentRequirements": [],
+	"childRequirements": [],
+	"implemented": [],
+	"prefix": "AdGuardHome",
+	"url": "https://github.com/demel42/IPSymconAdGuardHome/blob/master/README.md"
+}

@@ -1,10 +1,10 @@
 {
-	"id": "{0DCE4B6F-9176-DC9A-5502-1AF2B7573EB5}",
-	"name": "ModuleTemplate",
+	"id": "{F411A1B4-EE35-BCF6-41A3-0B6247381842}",
+	"name": "AdGuard Home",
 	"author": "Ch. Damsky",
-	"url": "https://github.com/demel42/ModuleTenmplate.git",
+	"url": "https://github.com/demel42/IPSymconAdGuardHome",
 	"compatibility": {
-		"version": "6.0"
+		"version": "6.2"
 	},
 	"version": "0.9",
 	"build": 0,
