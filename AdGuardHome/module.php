@@ -25,10 +25,14 @@ class AdGuardHome extends IPSModule
 
         $this->RegisterPropertyBoolean('module_disable', false);
 
+        $this->RegisterPropertyString('host', '');
+        $this->RegisterPropertyBoolean('use_https', false);
+        $this->RegisterPropertyString('user', '');
+        $this->RegisterPropertyString('password', '');
+
         $this->RegisterPropertyInteger('update_interval', 60);
 
         $this->RegisterAttributeString('UpdateInfo', '');
-        $this->RegisterAttributeString('external_update_interval', '');
 
         $this->InstallVarProfiles(false);
 
@@ -42,34 +46,32 @@ class AdGuardHome extends IPSModule
         parent::MessageSink($timestamp, $senderID, $message, $data);
 
         if ($message == IPS_KERNELMESSAGE && $data[0] == KR_READY) {
-            $this->OverwriteUpdateInterval();
+            $this->SetUpdateInterval();
         }
-    }
-
-    private function CheckModulePrerequisites()
-    {
-        $r = [];
-
-        return $r;
     }
 
     private function CheckModuleConfiguration()
     {
         $r = [];
 
+        $host = $this->ReadPropertyString('host');
+        if ($host == '') {
+            $this->SendDebug(__FUNCTION__, '"host" is needed', 0);
+            $r[] = $this->Translate('Host must be specified');
+        }
+        $user = $this->ReadPropertyString('user');
+        if ($user == '') {
+            $this->SendDebug(__FUNCTION__, '"user" is needed', 0);
+            $r[] = $this->Translate('Username must be specified');
+        }
+
+        $password = $this->ReadPropertyString('password');
+        if ($password == '') {
+            $this->SendDebug(__FUNCTION__, '"password" is needed', 0);
+            $r[] = $this->Translate('Password must be specified');
+        }
+
         return $r;
-    }
-
-    private function CheckModuleUpdate(array $oldInfo, array $newInfo)
-    {
-        $r = [];
-
-        return $r;
-    }
-
-    private function CompleteModuleUpdate(array $oldInfo, array $newInfo)
-    {
-        return '';
     }
 
     public function ApplyChanges()
@@ -96,7 +98,22 @@ class AdGuardHome extends IPSModule
             return;
         }
 
-        $vops = 0;
+        $vpos = 0;
+        $this->MaintainVariable('protection_enabled', $this->Translate('Protection enabled'), VARIABLETYPE_BOOLEAN, '~Switch', $vpos++, true);
+        $this->MaintainAction('protection_enabled', true);
+
+        $vpos = 10;
+        $this->MaintainVariable('total_dns_queries', $this->Translate('DNS requests (total)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+        $this->MaintainVariable('total_blocked', $this->Translate('Blocked addresses (total)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+
+        $vpos = 20;
+        $this->MaintainVariable('average_time', $this->Translate('Average processing time'), VARIABLETYPE_FLOAT, 'AdGuardHome.ms', $vpos++, true);
+
+        $vpos = 30;
+        $this->MaintainVariable('filter_update', $this->Translate('Oldest filter update'), VARIABLETYPE_INTEGER, '~UnixTimestamp', $vpos++, true);
+
+        $vpos = 100;
+        $this->MaintainVariable('LastUpdate', $this->Translate('Last update'), VARIABLETYPE_INTEGER, '~UnixTimestamp', $vpos++, true);
 
         $module_disable = $this->ReadPropertyBoolean('module_disable');
         if ($module_disable) {
@@ -108,7 +125,7 @@ class AdGuardHome extends IPSModule
         $this->MaintainStatus(IS_ACTIVE);
 
         if (IPS_GetKernelRunlevel() == KR_READY) {
-            $this->OverwriteUpdateInterval();
+            $this->SetUpdateInterval();
         }
     }
 
@@ -124,6 +141,33 @@ class AdGuardHome extends IPSModule
             'type'    => 'CheckBox',
             'name'    => 'module_disable',
             'caption' => 'Disable instance'
+        ];
+
+        $formElements[] = [
+            'type'    => 'ExpansionPanel',
+            'items'   => [
+                [
+                    'type'    => 'ValidationTextBox',
+                    'name'    => 'host',
+                    'caption' => 'Host'
+                ],
+                [
+                    'type'    => 'CheckBox',
+                    'name'    => 'use_https',
+                    'caption' => 'Use HTTPS'
+                ],
+                [
+                    'type'    => 'ValidationTextBox',
+                    'name'    => 'user',
+                    'caption' => 'User'
+                ],
+                [
+                    'type'    => 'PasswordTextBox',
+                    'name'    => 'password',
+                    'caption' => 'Password'
+                ],
+            ],
+            'caption' => 'Access configuration',
         ];
 
         $formElements[] = [
@@ -184,41 +228,28 @@ class AdGuardHome extends IPSModule
 
     private function SetUpdateInterval(int $sec = null)
     {
-        if (is_null($sec)) {
-            $sec = $this->ReadAttributeString('external_update_interval');
-            if ($sec == '') {
-                $sec = $this->ReadPropertyInteger('update_interval');
-            }
-        }
+        $sec = $this->ReadPropertyInteger('update_interval');
         $this->MaintainTimer('UpdateStatus', $sec * 1000);
     }
 
-    public function OverwriteUpdateInterval(int $sec = null)
-    {
-        if (is_null($sec)) {
-            $this->WriteAttributeString('external_update_interval', '');
-        } else {
-            $this->WriteAttributeString('external_update_interval', $sec);
-        }
-        $this->SetUpdateInterval($sec);
-    }
-
-    private function UpdateStatus()
+    public function SwitchEnableProtection(bool $mode)
     {
         if ($this->CheckStatus() == self::$STATUS_INVALID) {
             $this->SendDebug(__FUNCTION__, $this->GetStatusText() . ' => skip', 0);
-            return;
+            return false;
         }
 
-        /*
-        if ($this->HasActiveParent() == false) {
-            $this->SendDebug(__FUNCTION__, 'has no active parent', 0);
-            $this->LogMessage('has no active parent instance', KL_WARNING);
-            return;
-        }
-         */
+        $postdata = [
+            'protection_enabled' => $mode,
+        ];
 
-        $this->SendDebug(__FUNCTION__, $this->PrintTimer('UpdateStatus'), 0);
+        $data = '';
+        $statuscode = $this->do_HttpRequest('dns_config', '', $postdata, 'POST', $data);
+        if ($statuscode != 0) {
+            $this->MaintainStatus($statuscode);
+            return false;
+        }
+        return true;
     }
 
     private function LocalRequestAction($ident, $value)
@@ -253,6 +284,10 @@ class AdGuardHome extends IPSModule
 
         $r = false;
         switch ($ident) {
+            case 'protection_enabled':
+                $r = $this->SwitchEnableProtection((bool) $value);
+                $this->SendDebug(__FUNCTION__, $ident . '=' . $this->bool2str($value) . ' => ret=' . $this->bool2str($r), 0);
+                break;
             default:
                 $this->SendDebug(__FUNCTION__, 'invalid ident ' . $ident, 0);
                 break;
@@ -260,5 +295,298 @@ class AdGuardHome extends IPSModule
         if ($r) {
             $this->SetValue($ident, $value);
         }
+    }
+
+    private function UpdateStatus()
+    {
+        if ($this->CheckStatus() == self::$STATUS_INVALID) {
+            $this->SendDebug(__FUNCTION__, $this->GetStatusText() . ' => skip', 0);
+            return;
+        }
+
+        $fnd = true;
+
+        $data = '';
+        $statuscode = $this->do_HttpRequest('status', '', '', 'GET', $data);
+        if ($statuscode != 0) {
+            $this->MaintainStatus($statuscode);
+            return;
+        }
+        $jdata = json_decode($data, true);
+        $this->SendDebug(__FUNCTION__, 'status=' . print_r($jdata, true), 0);
+        /*
+            status=Array
+            (
+                [dns_addresses] => Array
+                [dns_port] => 53
+                [http_port] => 80
+                [protection_enabled] => 1
+                [dhcp_available] => 1
+                [running] => 1
+                [version] => v0.107.7
+                [language] => de
+            )
+         */
+        $protection_enabled = (bool) $this->GetArrayElem($jdata, 'protection_enabled', 0);
+        $this->SetValue('protection_enabled', $protection_enabled);
+
+        /*
+            dns_info=Array
+            (
+                [upstream_dns] => Array
+                [upstream_dns_file] =>
+                [bootstrap_dns] => Array
+                [protection_enabled] => 1
+                [ratelimit] => 20
+                [blocking_mode] => default
+                [blocking_ipv4] =>
+                [blocking_ipv6] =>
+                [edns_cs_enabled] => 1
+                [dnssec_enabled] => 1
+                [disable_ipv6] => 1
+                [upstream_mode] => parallel
+                [cache_size] => 4194304
+                [cache_ttl_min] => 0
+                [cache_ttl_max] => 10
+                [cache_optimistic] =>
+                [resolve_clients] => 1
+                [use_private_ptr_resolvers] => 1
+                [local_ptr_upstreams] => Array
+                [default_local_ptr_upstreams] => Array
+            )
+         */
+
+        $data = '';
+        $statuscode = $this->do_HttpRequest('stats', '', '', 'GET', $data);
+        if ($statuscode != 0) {
+            $this->MaintainStatus($statuscode);
+            return;
+        }
+        $jdata = json_decode($data, true);
+        $this->SendDebug(__FUNCTION__, 'stats=' . print_r($jdata, true), 0);
+        /*
+            stats=Array
+            (
+                [time_units] => days
+                [num_dns_queries] => 2954909
+                [num_blocked_filtering] => 164016
+                [num_replaced_safebrowsing] => 14
+                [num_replaced_safesearch] => 0
+                [num_replaced_parental] => 0
+                [avg_processing_time] => 0,018805
+                [top_queried_domains] => Array
+                [top_clients] => Array
+                [top_blocked_domains] => Array
+                [dns_queries] => Array
+                [blocked_filtering] => Array
+                [replaced_safebrowsing] => Array
+                [replaced_parental] => Array
+            )
+         */
+
+        $num_dns_queries = (int) $this->GetArrayElem($jdata, 'num_dns_queries', 0);
+        $this->SetValue('total_dns_queries', $num_dns_queries);
+
+        $daily_dns_queries = 0;
+        $today_dns_queries = 0;
+        if (isset($jdata['dns_queries'])) {
+            $dns_queries = $jdata['dns_queries'];
+            if (is_array($dns_queries)) {
+                for ($i = 0, $n = 0, $v = 0; $i < count($dns_queries); $i++) {
+                    if ($dns_queries[$i] == 0) {
+                        continue;
+                    }
+                    $n++;
+                    $v += $dns_queries[$i];
+                    /*
+                    $this->SendDebug(__FUNCTION__, 'dns_query #'.$i.'=' . $dns_queries[$i], 0);
+                    $this->SendDebug(__FUNCTION__, 'n='.$n.', v='.$v,0);
+                     */
+                }
+                $daily_dns_queries = floor($v / $n);
+                $today_dns_queries = $dns_queries[count($dns_queries) - 1];
+            }
+        }
+        $this->SendDebug(__FUNCTION__, 'dns_queries (dayly)=' . $daily_dns_queries . ', today=' . $today_dns_queries, 0);
+
+        $num_blocked_filtering = (int) $this->GetArrayElem($jdata, 'num_blocked_filtering', 0);
+        $num_replaced_safebrowsing = (int) $this->GetArrayElem($jdata, 'num_replaced_safebrowsing', 0);
+        $num_replaced_safesearch = (int) $this->GetArrayElem($jdata, 'num_replaced_safesearch', 0);
+        $this->SetValue('total_blocked', $num_blocked_filtering + $num_replaced_safebrowsing + $num_replaced_safesearch);
+
+        $avg_processing_time = (float) $this->GetArrayElem($jdata, 'avg_processing_time', 0);
+        $this->SetValue('average_time', $avg_processing_time * 1000);
+
+        $data = '';
+        $statuscode = $this->do_HttpRequest('filtering/status', '', '', 'GET', $data);
+        if ($statuscode != 0) {
+            $this->MaintainStatus($statuscode);
+            return;
+        }
+        $jdata = json_decode($data, true);
+        $this->SendDebug(__FUNCTION__, 'filtering/status=' . print_r($jdata, true), 0);
+        /*
+            filtering/status=Array
+            (
+                [enabled] => 1
+                [interval] => 24
+                [filters] => Array
+                    (
+                        [0] => Array
+                            (
+                                [enabled] => 1
+                                [last_updated] => 2022-07-11T08:39:59+02:00
+                            )
+                    )
+                [whitelist_filters] => Array
+                    (
+                        [0] => Array
+                            (
+                                [enabled] => 1
+                                [last_updated] => 2022-07-10T18:39:59+02:00
+                            )
+
+                    )
+                [user_rules] => Array
+            )
+         */
+
+        $filter_update = 0;
+        if (isset($jdata['filters'])) {
+            $filters = $jdata['filters'];
+            if (is_array($filters)) {
+                foreach ($filters as $filter) {
+                    if ((bool) $filter['enabled'] == false) {
+                        continue;
+                    }
+                    $ts = strtotime($filter['filter_update']);
+                    if ($filter_update == 0 || $ts < $filter_update) {
+                        $filter_update = $ts;
+                    }
+                }
+            }
+        }
+        if (isset($jdata['whitelist_filters'])) {
+            $filters = $jdata['whitelist_filters'];
+            if (is_array($filters)) {
+                foreach ($filters as $filter) {
+                    if ((bool) $filter['enabled'] == false) {
+                        continue;
+                    }
+                    $ts = strtotime($filter['filter_update']);
+                    if ($filter_update == 0 || $ts < $filter_update) {
+                        $filter_update = $ts;
+                    }
+                }
+            }
+        }
+        $this->SendDebug(__FUNCTION__, 'filter_update=' . date('d.m.Y H:i:s', $filter_update), 0);
+        $this->SetValue('filter_update', $filter_update);
+
+        $this->SetValue('LastUpdate', time());
+
+        $this->MaintainStatus(IS_ACTIVE);
+        $this->SendDebug(__FUNCTION__, $this->PrintTimer('UpdateStatus'), 0);
+    }
+
+    private function do_HttpRequest($func, $params, $postdata, $mode, &$data)
+    {
+        $host = $this->ReadPropertyString('host');
+        $use_https = $this->ReadPropertyBoolean('use_https');
+        $user = $this->ReadPropertyString('user');
+        $password = $this->ReadPropertyString('password');
+
+        $url = ($use_https ? 'https://' : 'http://') . $host . '/control/' . $func;
+
+        if ($params != '') {
+            $n = 0;
+            foreach ($params as $param => $value) {
+                $url .= ($n++ ? '&' : '?') . $param . '=' . rawurlencode($value);
+            }
+        }
+
+        $header = [
+            'Accept: application/json; charset=utf-8',
+        ];
+
+        if ($mode == 'POST') {
+            $header[] = 'Content-Type: application/json';
+            $postdata = json_encode($postdata);
+        }
+
+        $this->SendDebug(__FUNCTION__, 'http-' . $mode . ': url=' . $url, 0);
+        $this->SendDebug(__FUNCTION__, '    header=' . print_r($header, true), 0);
+        if ($postdata != '') {
+            $this->SendDebug(__FUNCTION__, '    postdata=' . $postdata, 0);
+        }
+
+        $time_start = microtime(true);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        switch ($mode) {
+            case 'GET':
+                break;
+            case 'POST':
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
+                break;
+            case 'PUT':
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $mode);
+                break;
+            case 'DELETE':
+                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $mode);
+                break;
+        }
+        curl_setopt($ch, CURLOPT_USERPWD, $user . ':' . $password);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $cdata = curl_exec($ch);
+        $cerrno = curl_errno($ch);
+        $cerror = $cerrno ? curl_error($ch) : '';
+        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $redirect_url = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+        curl_close($ch);
+
+        $duration = round(microtime(true) - $time_start, 2);
+        $this->SendDebug(__FUNCTION__, ' => errno=' . $cerrno . ', httpcode=' . $httpcode . ', duration=' . $duration . 's', 0);
+        $this->SendDebug(__FUNCTION__, ' => cdata=' . $cdata, 0);
+
+        $statuscode = 0;
+        $err = '';
+        $data = '';
+
+        if ($cerrno) {
+            $statuscode = self::$IS_SERVERERROR;
+            $err = 'got curl-errno ' . $cerrno . ' (' . $cerror . ')';
+        } elseif ($httpcode == 200 || $httpcode == 204) {
+            $data = $cdata;
+            if ($data != false) {
+                $jdata = json_decode($data, true);
+                if ($jdata == false) {
+                    $statuscode = self::$IS_INVALIDDATA;
+                    $err = 'malformed data';
+                }
+            }
+        } elseif ($httpcode == 401) {
+            $statuscode = self::$IS_UNAUTHORIZED;
+            $err = 'got http-code ' . $httpcode . ' (unauthorized)';
+        } elseif ($httpcode >= 500 && $httpcode <= 599) {
+            $statuscode = self::$IS_SERVERERROR;
+            $err = 'got http-code ' . $httpcode . ' (server error)';
+        } else {
+            $statuscode = self::$IS_HTTPERROR;
+            $err = 'got http-code ' . $httpcode;
+        }
+
+        if ($statuscode) {
+            $this->LogMessage('url=' . $url . ' => statuscode=' . $statuscode . ', err=' . $err, KL_WARNING);
+            $this->SendDebug(__FUNCTION__, ' => statuscode=' . $statuscode . ', err=' . $err, 0);
+        }
+
+        return $statuscode;
     }
 }

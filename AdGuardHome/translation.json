@@ -3,14 +3,33 @@
 		"de": {
 			"AdGuard Home": "AdGuard Home",
 
+			"__function__": "CheckConfiguration",
+            "Host must be specified": "Hostname muss angegeben sein",
+            "Username must be specified": "Benutzer muss angegeben sein",
+            "Password must be specified": "Passwort muss angegeben sein",
+
 			"__properties__": "",
 			"Disable instance": "Instanz deaktivieren",
+
+			"Access configuration": "Zugangskonfiguration",
+			"Host": "Host",
+            "Use HTTPS": "HTTPS verwenden",
+            "User": "Benutzer",
+            "Password": "Passwort",
 
 			"Update interval": "Aktualisierungsintervall",
 			"Seconds": "Sekunden",
 
 			"__actions__": "",
 			"Update status": "Aktualisiere Status",
+
+			"__variables__": "",
+			"Protection enabled": "Schutz aktiviert",
+			"DNS requests (total)": "DNS-Anfragen (gesamt)",
+			"Blocked addresses (total)": "Gesperrte Adressen (gesamt)",
+			"Average processing time": "Durchschnittliche Verarbeitungszeit",
+			"Oldest filter update": "älteste Aktualisierung der Filter",
+			"Last update": "Letzte Aktualisierung",
 
 			"__end__": ""
 		}
