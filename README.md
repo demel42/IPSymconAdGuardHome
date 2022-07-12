@@ -18,9 +18,17 @@
 
 ## 1. Funktionsumfang
 
+Mittels dieses Moduls kann man den Werbeblocker [AdGuradHome](https://adguard.com/de/adguard-home/overview.html) in IP-Symcon einbinden.<br>
+Das umfassen
+- Aktivieren/Deaktivierne des Schutzes
+- Anzeige einiger wichtiger Variablen
+
+Siehe auch [hier](https://github.com/AdguardTeam/AdGuardHome).
+
 ## 2. Voraussetzungen
 
 - IP-Symcon ab Version 6.2
+- Instanz vom AdGuard Home
 
 ## 3. Installation
 
@@ -35,6 +43,9 @@ Alternativ kann das Modul über [Module Control](https://www.symcon.de/service/d
 
 alle Funktionen sind über _RequestAction_ der jew. Variablen ansteuerbar
 
+`AdGuardHome_SwitchEnableProtection(int $InstanzID, bool $mode)`
+Aktiviert/deaktiviert den Schutz.
+
 ## 5. Konfiguration
 
 ### IPSymcomAdGuardHome
@@ -45,11 +56,19 @@ alle Funktionen sind über _RequestAction_ der jew. Variablen ansteuerbar
 | :------------------------ | :------  | :----------- | :----------- |
 | Instanz deaktivieren      | boolean  | false        | Instanz temporär deaktivieren |
 |                           |          |              | |
+| Host                      | string   |              | Hostname/IP-Adresse der AdGuardHome-Instanz |
+| HTTPS benutzen            | boolean  | false        | HTTPS benutzen |
+|                           |          |              | |
+| Benutzer                  | string   |              | AdGuard-Benutzer mit entsprechender Berechtigung |
+| Passwort                  | string   |              | zugrhöriges Passwort |
+|                           |          |              | |
+| Aktualisierungsintervall  | integer  | 60           | Intervall in Sekunden |
 
 #### Aktionen
 
 | Bezeichnung                | Beschreibung |
 | :------------------------- | :----------- |
+| Aktulisiere Status         | Daten abrufen |
 
 ### Variablenprofile
 
@@ -73,5 +92,5 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
-- 0.9 @ dd.mm.yyyy HH:MM (beta)
+- 1.0 @ 12.07.2022 18:09
   - Initiale Version
