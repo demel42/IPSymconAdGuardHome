@@ -57,6 +57,8 @@ Es werden folgende Variablenprofile angelegt:
 * Boolean<br>
 * Integer<br>
 * Float<br>
+AdGuardHome.ms,
+AdGuardHome.Rate
 * String<br>
 
 ## 6. Anhang

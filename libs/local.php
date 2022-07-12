@@ -51,5 +51,6 @@ trait AdGuardHomeLocalLib
         }
 
         $this->CreateVarProfile('AdGuardHome.ms', VARIABLETYPE_FLOAT, ' ms', 0, 0, 0, 0, '', [], $reInstall);
+        $this->CreateVarProfile('AdGuardHome.Rate', VARIABLETYPE_FLOAT, ' %', 0, 0, 0, 1, '', [], $reInstall);
     }
 }

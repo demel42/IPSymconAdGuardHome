@@ -25,8 +25,19 @@
 
 			"__variables__": "",
 			"Protection enabled": "Schutz aktiviert",
+
 			"DNS requests (total)": "DNS-Anfragen (gesamt)",
 			"Blocked addresses (total)": "Gesperrte Adressen (gesamt)",
+			"Blocking rate (total)": "Blockierungsquote (gesamt)",
+
+			"DNS requests (today)": "DNS-Anfragen (heute)",
+			"Blocked addresses (today)": "Gesperrte Adressen (heute)",
+			"Blocking rate (today)": "Blockierungsquote (heute)",
+
+			"DNS requests (daily)": "DNS-Anfragen (täglich)",
+			"Blocked addresses (daily)": "Gesperrte Adressen (täglich)",
+			"Blocking rate (daily)": "Blockierungsquote (täglich)",
+
 			"Average processing time": "Durchschnittliche Verarbeitungszeit",
 			"Oldest filter update": "älteste Aktualisierung der Filter",
 			"Last update": "Letzte Aktualisierung",

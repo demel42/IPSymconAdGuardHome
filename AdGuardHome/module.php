@@ -105,11 +105,22 @@ class AdGuardHome extends IPSModule
         $vpos = 10;
         $this->MaintainVariable('total_dns_queries', $this->Translate('DNS requests (total)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
         $this->MaintainVariable('total_blocked', $this->Translate('Blocked addresses (total)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+        $this->MaintainVariable('total_rate', $this->Translate('Blocking rate (total)'), VARIABLETYPE_FLOAT, 'AdGuardHome.Rate', $vpos++, true);
 
         $vpos = 20;
-        $this->MaintainVariable('average_time', $this->Translate('Average processing time'), VARIABLETYPE_FLOAT, 'AdGuardHome.ms', $vpos++, true);
+        $this->MaintainVariable('today_dns_queries', $this->Translate('DNS requests (today)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+        $this->MaintainVariable('today_blocked', $this->Translate('Blocked addresses (today)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+        $this->MaintainVariable('today_rate', $this->Translate('Blocking rate (today)'), VARIABLETYPE_FLOAT, 'AdGuardHome.Rate', $vpos++, true);
 
         $vpos = 30;
+        $this->MaintainVariable('daily_dns_queries', $this->Translate('DNS requests (daily)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+        $this->MaintainVariable('daily_blocked', $this->Translate('Blocked addresses (daily)'), VARIABLETYPE_INTEGER, '', $vpos++, true);
+        $this->MaintainVariable('daily_rate', $this->Translate('Blocking rate (daily)'), VARIABLETYPE_FLOAT, 'AdGuardHome.Rate', $vpos++, true);
+
+        $vpos = 50;
+        $this->MaintainVariable('average_time', $this->Translate('Average processing time'), VARIABLETYPE_FLOAT, 'AdGuardHome.ms', $vpos++, true);
+
+        $vpos = 90;
         $this->MaintainVariable('filter_update', $this->Translate('Oldest filter update'), VARIABLETYPE_INTEGER, '~UnixTimestamp', $vpos++, true);
 
         $vpos = 100;
@@ -304,8 +315,6 @@ class AdGuardHome extends IPSModule
             return;
         }
 
-        $fnd = true;
-
         $data = '';
         $statuscode = $this->do_HttpRequest('status', '', '', 'GET', $data);
         if ($statuscode != 0) {
@@ -384,8 +393,7 @@ class AdGuardHome extends IPSModule
             )
          */
 
-        $num_dns_queries = (int) $this->GetArrayElem($jdata, 'num_dns_queries', 0);
-        $this->SetValue('total_dns_queries', $num_dns_queries);
+        $total_dns_queries = (int) $this->GetArrayElem($jdata, 'num_dns_queries', 0);
 
         $daily_dns_queries = 0;
         $today_dns_queries = 0;
@@ -398,21 +406,55 @@ class AdGuardHome extends IPSModule
                     }
                     $n++;
                     $v += $dns_queries[$i];
-                    /*
-                    $this->SendDebug(__FUNCTION__, 'dns_query #'.$i.'=' . $dns_queries[$i], 0);
-                    $this->SendDebug(__FUNCTION__, 'n='.$n.', v='.$v,0);
-                     */
                 }
-                $daily_dns_queries = floor($v / $n);
+                if ($v && $n) {
+                    $daily_dns_queries = floor($v / $n);
+                }
                 $today_dns_queries = $dns_queries[count($dns_queries) - 1];
             }
         }
-        $this->SendDebug(__FUNCTION__, 'dns_queries (dayly)=' . $daily_dns_queries . ', today=' . $today_dns_queries, 0);
+        $this->SendDebug(__FUNCTION__, 'dns_queries total=' . $total_dns_queries . ', daily=' . $daily_dns_queries . ', today=' . $today_dns_queries, 0);
 
-        $num_blocked_filtering = (int) $this->GetArrayElem($jdata, 'num_blocked_filtering', 0);
-        $num_replaced_safebrowsing = (int) $this->GetArrayElem($jdata, 'num_replaced_safebrowsing', 0);
-        $num_replaced_safesearch = (int) $this->GetArrayElem($jdata, 'num_replaced_safesearch', 0);
-        $this->SetValue('total_blocked', $num_blocked_filtering + $num_replaced_safebrowsing + $num_replaced_safesearch);
+        $total_blocked = 0;
+        foreach (['num_blocked_filtering', 'num_replaced_safebrowsing', 'num_replaced_parental'] as $f) {
+            if (isset($jdata[$f])) {
+                $total_blocked += (int) $jdata[$f];
+            }
+        }
+
+        $daily_blocked = 0;
+        $today_blocked = 0;
+        foreach (['blocked_filtering', 'replaced_safebrowsing', 'replaced_parental'] as $f) {
+            if (isset($jdata[$f])) {
+                $blocked = $jdata[$f];
+                if (is_array($blocked)) {
+                    for ($i = 0, $n = 0, $v = 0; $i < count($blocked); $i++) {
+                        if ($blocked[$i] == 0) {
+                            continue;
+                        }
+                        $n++;
+                        $v += $blocked[$i];
+                    }
+                    if ($v && $n) {
+                        $daily_blocked += floor($v / $n);
+                    }
+                    $today_blocked += $blocked[count($blocked) - 1];
+                }
+            }
+        }
+        $this->SendDebug(__FUNCTION__, 'blocked total=' . $total_blocked . ',daily=' . $daily_blocked . ', today=' . $today_blocked, 0);
+
+        $this->SetValue('total_dns_queries', $total_dns_queries);
+        $this->SetValue('total_blocked', $total_blocked);
+        $this->SetValue('total_rate', (float) $total_blocked / (float) $total_dns_queries * 100.0);
+
+        $this->SetValue('today_dns_queries', $today_dns_queries);
+        $this->SetValue('today_blocked', $today_blocked);
+        $this->SetValue('today_rate', (float) $today_blocked / (float) $today_dns_queries * 100.0);
+
+        $this->SetValue('daily_dns_queries', $daily_dns_queries);
+        $this->SetValue('daily_blocked', $daily_blocked);
+        $this->SetValue('daily_rate', (float) $daily_blocked / (float) $daily_dns_queries * 100.0);
 
         $avg_processing_time = (float) $this->GetArrayElem($jdata, 'avg_processing_time', 0);
         $this->SetValue('average_time', $avg_processing_time * 1000);
@@ -459,7 +501,7 @@ class AdGuardHome extends IPSModule
                     if ((bool) $filter['enabled'] == false) {
                         continue;
                     }
-                    $ts = strtotime($filter['filter_update']);
+                    $ts = strtotime($filter['last_updated']);
                     if ($filter_update == 0 || $ts < $filter_update) {
                         $filter_update = $ts;
                     }
@@ -473,7 +515,7 @@ class AdGuardHome extends IPSModule
                     if ((bool) $filter['enabled'] == false) {
                         continue;
                     }
-                    $ts = strtotime($filter['filter_update']);
+                    $ts = strtotime($filter['last_updated']);
                     if ($filter_update == 0 || $ts < $filter_update) {
                         $filter_update = $ts;
                     }
