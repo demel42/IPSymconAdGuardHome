@@ -19,7 +19,7 @@
 ## 1. Funktionsumfang
 
 Mittels dieses Moduls kann man den Werbeblocker [AdGuradHome](https://adguard.com/de/adguard-home/overview.html) in IP-Symcon einbinden.<br>
-Das umfassen
+Das umfasst:
 - Aktivieren/Deaktivierne des Schutzes
 - Anzeige einiger wichtiger Variablen
 
