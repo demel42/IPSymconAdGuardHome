@@ -92,5 +92,8 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.1 @ 14.07.2022 17:48
+  - Fix: Division durch Null (vorzugsweise um 0 Uhr)
+
 - 1.0 @ 12.07.2022 18:09
   - Initiale Version

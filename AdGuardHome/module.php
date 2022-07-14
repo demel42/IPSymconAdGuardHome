@@ -444,17 +444,21 @@ class AdGuardHome extends IPSModule
         }
         $this->SendDebug(__FUNCTION__, 'blocked total=' . $total_blocked . ',daily=' . $daily_blocked . ', today=' . $today_blocked, 0);
 
+        $total_rate = $total_dns_queries > 0 ? $total_blocked * 100.0 / $total_dns_queries : 0;
+        $today_rate = $today_dns_queries > 0 ? $today_blocked * 100.0 / $today_dns_queries : 0;
+        $daily_rate = $daily_dns_queries > 0 ? $daily_blocked * 100.0 / $daily_dns_queries : 0;
+
         $this->SetValue('total_dns_queries', $total_dns_queries);
         $this->SetValue('total_blocked', $total_blocked);
-        $this->SetValue('total_rate', (float) $total_blocked / (float) $total_dns_queries * 100.0);
+        $this->SetValue('total_rate', $total_rate);
 
         $this->SetValue('today_dns_queries', $today_dns_queries);
         $this->SetValue('today_blocked', $today_blocked);
-        $this->SetValue('today_rate', (float) $today_blocked / (float) $today_dns_queries * 100.0);
+        $this->SetValue('today_rate', $today_rate);
 
         $this->SetValue('daily_dns_queries', $daily_dns_queries);
         $this->SetValue('daily_blocked', $daily_blocked);
-        $this->SetValue('daily_rate', (float) $daily_blocked / (float) $daily_dns_queries * 100.0);
+        $this->SetValue('daily_rate', $daily_rate);
 
         $avg_processing_time = (float) $this->GetArrayElem($jdata, 'avg_processing_time', 0);
         $this->SetValue('average_time', $avg_processing_time * 1000);
