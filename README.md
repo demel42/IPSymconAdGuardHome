@@ -92,6 +92,10 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.1.1 @ 07.10.2022 13:59
+  - update submodule CommonStubs
+    Fix: Update-Prüfung wieder funktionsfähig
+
 - 1.1 @ 14.07.2022 17:48
   - Fix: Division durch Null (vorzugsweise um 0 Uhr)
 
