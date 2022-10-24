@@ -214,7 +214,7 @@ class AdGuardHome extends IPSModule
         $formActions[] = [
             'type'      => 'ExpansionPanel',
             'caption'   => 'Expert area',
-            'expanded ' => false,
+            'expanded'  => false,
             'items'     => [
                 $this->GetInstallVarProfilesFormItem(),
             ],
@@ -223,7 +223,7 @@ class AdGuardHome extends IPSModule
         $formActions[] = [
             'type'      => 'ExpansionPanel',
             'caption'   => 'Test area',
-            'expanded ' => false,
+            'expanded'  => false,
             'items'     => [
                 [
                     'type'    => 'TestCenter',
