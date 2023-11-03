@@ -92,7 +92,7 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
-- 1.3 @ 14.09.2023 15:55
+- 1.3 @ 03.11.2023 11:06
   - Neu: Ermittlung von Speicherbedarf und Laufzeit (aktuell und für 31 Tage) und Anzeige im Panel "Information"
   - update submodule CommonStubs
 
