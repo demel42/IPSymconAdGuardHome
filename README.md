@@ -92,6 +92,9 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.4 @ 27.01.2024 10:48
+  - Fix: Absicherung von UC_FindReferences()
+
 - 1.3 @ 03.11.2023 11:06
   - Neu: Ermittlung von Speicherbedarf und Laufzeit (aktuell und für 31 Tage) und Anzeige im Panel "Information"
   - update submodule CommonStubs
