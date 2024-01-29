@@ -92,7 +92,7 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
-- 1.4 @ 28.01.2024 16:24
+- 1.4 @ 29.01.2024 11:49
   - Fix: Absicherung von UC_FindReferences()
 
 - 1.3 @ 03.11.2023 11:06
