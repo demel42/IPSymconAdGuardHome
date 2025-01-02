@@ -92,6 +92,11 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.5 @ 02.01.2025 14:28
+  - Fix: Link zur Dokumentation korrigiert
+  - interne Änderung
+  - update submodule CommonStubs
+
 - 1.4 @ 29.01.2024 11:49
   - Fix: Absicherung von UC_FindReferences()
 
