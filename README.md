@@ -92,6 +92,9 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.6 @ 03.09.2025 16:55
+  - Fix: Angabe zum "vendor" fehlte
+
 - 1.5 @ 02.01.2025 14:28
   - Fix: Link zur Dokumentation korrigiert
   - interne Änderung

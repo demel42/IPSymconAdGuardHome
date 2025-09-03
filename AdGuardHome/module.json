@@ -2,7 +2,7 @@
 	"id": "{FE7566FC-ECA0-78E8-5114-C4C217231642}",
 	"name": "AdGuard Home",
 	"type": 3,
-	"vendor": "",
+	"vendor": "AdGuard",
 	"aliases": [],
 	"parentRequirements": [],
 	"childRequirements": [],
