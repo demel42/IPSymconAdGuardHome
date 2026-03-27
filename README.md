@@ -92,6 +92,10 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.7 @ 27.03.2026 09:02
+  - Anpassung an IPS 9
+  - update submodule CommonStubs
+
 - 1.6 @ 03.09.2025 16:55
   - Fix: Angabe zum "vendor" fehlte
 
