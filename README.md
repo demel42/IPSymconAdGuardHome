@@ -92,6 +92,10 @@ AdGuardHome.Rate
 
 ## 7. Versions-Historie
 
+- 1.8 @ 09.05.2026 11:36
+  - Fix: Änderung von deprecated php code
+  - update submodule CommonStubs
+
 - 1.7 @ 27.03.2026 09:02
   - Änderung: Anpassung an IPS 9
   - update submodule CommonStubs
